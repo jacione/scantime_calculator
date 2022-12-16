@@ -26,7 +26,7 @@ class Scan:
         self.move = 0.0
         self.align = 0.0
 
-        for var in [self.pts, self.exp, self.accs, self.reps]:
+        for var in [self.peaks, self.pts, self.exp, self.accs, self.reps]:
             var.trace("w", callback=self.calculate)
 
         self.calculate()
