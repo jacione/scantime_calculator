@@ -122,5 +122,8 @@ class App:
 
 
 if __name__ == "__main__":
-    App()
+    try:
+        App()
+    except SyntaxError:
+        print("##### ERROR: requires python >= 3.8")
     pass
