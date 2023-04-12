@@ -15,36 +15,36 @@ entry_options = {'width': 10, 'font': ('Arial', 14), 'justify': tk.CENTER}
 
 class Scan:
     def __init__(self):
-        self.peaks = tk.IntVar()
+        self.n_peaks = tk.IntVar()
         self.pts = tk.IntVar()
         self.exp = tk.DoubleVar()
         self.accs = tk.IntVar()
         self.reps = tk.IntVar()
-        self.time = tk.DoubleVar()
-        self.time_str = tk.StringVar()
+        self.scantime = tk.DoubleVar()
+        self.scantime_str = tk.StringVar()
+        self.peaktime = tk.DoubleVar()
+        self.peaktime_str = tk.StringVar()
         self.read = 0.0
         self.move = 0.0
         self.align = 0.0
 
-        for var in [self.peaks, self.pts, self.exp, self.accs, self.reps]:
+        for var in [self.n_peaks, self.pts, self.exp, self.accs, self.reps]:
             var.trace("w", callback=self.calculate)
 
         self.calculate()
 
     def calculate(self, *_):
         try:
-            self.time.set(self.peaks.get()
-                          * ((((self.pts.get() + 1)
-                               * (self.exp.get()+self.read)
-                               * self.accs.get()
-                               + self.align)
-                              * self.reps.get())
-                             + self.move)
-                          )
-            self.time_str.set(f"{round(self.time.get()//3600)}h {round((self.time.get()%3600)//60)}m")
+            self.peaktime.set(
+                ((((self.pts.get() + 1) * (self.exp.get()+self.read) * self.accs.get() + self.align)
+                  * self.reps.get()) + self.move)
+            )
+            self.peaktime_str.set(f"{round(self.peaktime.get() // 3600)}h {round((self.peaktime.get() % 3600) // 60)}m")
+            self.scantime.set(self.n_peaks.get() * self.peaktime.get())
+            self.scantime_str.set(f"{round(self.scantime.get() // 3600)}h {round((self.scantime.get() % 3600) // 60)}m")
         except tk.TclError:
-            self.time.set(0.0)
-            self.time_str.set("")
+            self.scantime.set(0.0)
+            self.scantime_str.set("")
 
 
 class App:
@@ -76,7 +76,7 @@ class App:
 
         row += 1
         ttk.Separator(root, orient="horizontal"
-                      ).grid(column=0, row=row, columnspan=6, **grid_options, sticky=tk.EW)
+                      ).grid(column=0, row=row, columnspan=7, **grid_options, sticky=tk.EW)
 
         row += 1
         ttk.Label(root, text="# of peaks", **ctr_label).grid(column=0, row=row, **grid_options)
@@ -84,7 +84,8 @@ class App:
         ttk.Label(root, text="Exposure", **ctr_label).grid(column=2, row=row, **grid_options)
         ttk.Label(root, text="Accum.", **ctr_label).grid(column=3, row=row, **grid_options)
         ttk.Label(root, text="Repetitions", **ctr_label).grid(column=4, row=row, **grid_options)
-        ttk.Label(root, text="Time", **ctr_label).grid(column=5, row=row, **grid_options)
+        ttk.Label(root, text="Scan time", **ctr_label).grid(column=5, row=row, **grid_options)
+        ttk.Label(root, text="Row total", **ctr_label).grid(column=6, row=row, **grid_options)
 
         self.time = 0.0
         self.time_str = tk.StringVar()
@@ -92,17 +93,18 @@ class App:
         self.scans = [Scan() for _ in range(4)]
         for scan in self.scans:
             row += 1
-            ttk.Entry(root, textvariable=scan.peaks, **entry_options).grid(column=0, row=row, **grid_options)
+            ttk.Entry(root, textvariable=scan.n_peaks, **entry_options).grid(column=0, row=row, **grid_options)
             ttk.Entry(root, textvariable=scan.pts, **entry_options).grid(column=1, row=row, **grid_options)
             ttk.Entry(root, textvariable=scan.exp, **entry_options).grid(column=2, row=row, **grid_options)
             ttk.Entry(root, textvariable=scan.accs, **entry_options).grid(column=3, row=row, **grid_options)
             ttk.Entry(root, textvariable=scan.reps, **entry_options).grid(column=4, row=row, **grid_options)
-            ttk.Label(root, textvariable=scan.time_str, **ctr_label).grid(column=5, row=row, **grid_options)
-            scan.time.trace("w", callback=self.calculate_total)
+            ttk.Label(root, textvariable=scan.peaktime_str, **ctr_label).grid(column=5, row=row, **grid_options)
+            ttk.Label(root, textvariable=scan.scantime_str, **ctr_label).grid(column=6, row=row, **grid_options)
+            scan.scantime.trace("w", callback=self.calculate_total)
 
         row += 1
         ttk.Separator(root, orient="horizontal"
-                      ).grid(column=0, row=row, columnspan=6, **grid_options, sticky=tk.EW)
+                      ).grid(column=0, row=row, columnspan=7, **grid_options, sticky=tk.EW)
 
         row += 1
         ttk.Label(root, textvariable=self.time_str, font=("Arial", 20), anchor=tk.W
@@ -124,8 +126,8 @@ class App:
             scan.calculate()
 
     def calculate_total(self, *_):
-        self.time = sum([scan.time.get() for scan in self.scans])
-        self.time_str.set(f"Total time: {round(self.time//3600)}hrs, {round((self.time%3600)//60)}min")
+        self.time = sum([scan.scantime.get() for scan in self.scans])
+        self.time_str.set(f"Overall time: {round(self.time//3600)}hrs, {round((self.time%3600)//60)}min")
 
 
 if __name__ == "__main__":
